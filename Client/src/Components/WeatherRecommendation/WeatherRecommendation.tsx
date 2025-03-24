@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './WeatherRecommendation.css';
 
-// Clothing Images (import all your image files)
-// Use relative paths from the component's location
+// Import Images
 import hoodieImg from '../../assets/clothing/hoodie.png';
 import joggersImg from '../../assets/clothing/joggers.png';
 import windbreakerImg from '../../assets/clothing/windbreaker.png';
 import waterproofTrousersImg from '../../assets/clothing/waterprooftrousers.png';
+import RainIcon from '../../assets/icons/Rain.svg';
+import SunIcon from '../../assets/icons/Sun.svg';
+import WindIcon from '../../assets/icons/Wind.svg';
 
 // Image mapping
 const clothingImages: Record<string, string> = {
@@ -65,7 +67,7 @@ const WeatherRecommendation = () => {
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        // Add this debug log (LINE ~35)
+
         console.log("Attempting to fetch weather for:", location);
 
         const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
@@ -75,7 +77,6 @@ const WeatherRecommendation = () => {
           `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&appid=${API_KEY}`
         );
 
-        // Add this status check (LINE ~43)
         console.log("API Response Status:", response.status);
 
         if (!response.ok) {
@@ -88,7 +89,6 @@ const WeatherRecommendation = () => {
         setWeatherData(data);
 
       } catch (err) {
-        // Enhanced error logging (LINE ~53)
         console.error("Full Error Details:", {
           error: err,
           message: err instanceof Error ? err.message : 'Unknown error',
@@ -114,7 +114,7 @@ const WeatherRecommendation = () => {
       accessories: []
     };
 
-    // Temperature logic
+    // Temperature conditions
     if (temp < 10) {
       recommendations.top.push('Hoodie', 'Windbreaker');
       recommendations.bottom.push('Joggers', 'Waterproof Trousers');
@@ -126,13 +126,13 @@ const WeatherRecommendation = () => {
       recommendations.bottom.push('Joggers');
     }
 
-    // Precipitation logic
+    // Precipitation conditions
     if (precipitation > 30) {
       recommendations.top.push('Waterproof Trousers');
       recommendations.accessories.push('Waterproof Trousers');
     }
 
-    // Wind logic
+    // Wind conditions
     if (windSpeed > 15) {
       recommendations.top.push('Windbreaker');
     }
@@ -174,11 +174,23 @@ const WeatherRecommendation = () => {
         {hourlyForecast.map((forecast, index) => (
           <div key={index} className="time-slot">
             <div className="time">
-              {index === 0 ? 'Now' : `${new Date(forecast.dt * 1000).getHours()}pm`}
+              {index === 0 ? 'Now' : new Date(forecast.dt * 1000).toLocaleTimeString([], { hour: 'numeric', hour12: true })}
             </div>
-            <div className="temp">{Math.round(forecast.main.temp)}°C</div>
-            <div className="precip">{Math.round(forecast.pop * 100)}%</div>
-            <div className="wind">{Math.round(forecast.wind.speed)} mph</div>
+
+            <div className="temp-container">
+              <img src={SunIcon} alt="Temperature" className="weather-icon" />
+              <span className="temp">{Math.round(forecast.main.temp)}°C</span>
+            </div>
+
+            <div className="precip-container">
+              <img src={RainIcon} alt="Precipitation" className="weather-icon" />
+              <span className="precip">{Math.round(forecast.pop * 100)}%</span>
+            </div>
+
+            <div className="wind-container">
+              <img src={WindIcon} alt="Wind" className="weather-icon" />
+              <span className="wind">{Math.round(forecast.wind.speed)} mph</span>
+            </div>
           </div>
         ))}
       </div>
