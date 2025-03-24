@@ -59,7 +59,8 @@ const WeatherRecommendation = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [location, setLocation] = useState('London');
+  const [inputValue, setInputValue] = useState('London'); // Tracks input field
+  const [location, setLocation] = useState('London');     // Tracks API searches
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -200,11 +201,25 @@ const WeatherRecommendation = () => {
       <div className="location-search">
         <input
           type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           placeholder="Enter location"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && inputValue.trim()) {
+              setLocation(inputValue.trim());
+            }
+          }}
         />
-        <button onClick={() => setLocation(location)}>Search</button>
+        <button
+          onClick={() => {
+            if (inputValue.trim()) {
+              setLocation(inputValue.trim());
+            }
+          }}
+          disabled={!inputValue.trim()}
+        >
+          Search
+        </button>
       </div>
     </div>
   );
