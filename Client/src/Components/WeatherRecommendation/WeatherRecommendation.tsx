@@ -1,53 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import './WeatherRecommendation.css';
 
+// Clothing Images (import all your image files)
+// Use relative paths from the component's location
+import hoodieImg from '../../assets/clothing/hoodie.png';
+import joggersImg from '../../assets/clothing/joggers.png';
+import windbreakerImg from '../../assets/clothing/windbreaker.png';
+import waterproofTrousersImg from '../../assets/clothing/waterprooftrousers.png';
+
+// Image mapping
+const clothingImages: Record<string, string> = {
+  'Hoodie': hoodieImg,
+  'Joggers': joggersImg,
+  'Windbreaker': windbreakerImg,
+  'Waterproof Trousers': waterproofTrousersImg,
+};
+
+// TypeScript Interfaces
 interface MainWeatherData {
   temp: number;
   feels_like: number;
   temp_min: number;
   temp_max: number;
-  pressure: number;
   humidity: number;
 }
 
-interface WeatherCondition {
-  id: number;
-  main: string;
+interface Weather {
   description: string;
-  icon: string;
-}
-
-interface WindData {
-  speed: number;
-  deg: number;
-  gust?: number;
+  main: string;
 }
 
 interface ForecastItem {
   dt: number;
   main: MainWeatherData;
-  weather: WeatherCondition[];
-  clouds: { all: number };
-  wind: WindData;
-  visibility: number;
+  weather: Weather[];
   pop: number;
-  dt_txt: string;
+  wind: {
+    speed: number;
+  };
 }
 
 interface WeatherData {
-  cod: string;
-  message: number;
-  cnt: number;
   list: ForecastItem[];
   city: {
-    id: number;
     name: string;
-    coord: { lat: number; lon: number };
-    country: string;
-    population: number;
-    timezone: number;
-    sunrise: number;
-    sunset: number;
   };
 }
 
@@ -57,29 +53,48 @@ interface ClothingRecommendations {
   accessories: string[];
 }
 
+
+
 const WeatherRecommendation = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [location, setLocation] = useState<string>('London');
+  const [location, setLocation] = useState('London');
 
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'be272084e4638d9e2995a929638b4ecf';
+        // Add this debug log (LINE ~35)
+        console.log("Attempting to fetch weather for:", location);
+
+        const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+        if (!API_KEY) throw new Error("API key missing - check .env file");
+
         const response = await fetch(
           `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&appid=${API_KEY}`
         );
 
+        // Add this status check (LINE ~43)
+        console.log("API Response Status:", response.status);
+
         if (!response.ok) {
-          throw new Error('Weather data not available');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Weather data not available');
         }
 
-        const data: WeatherData = await response.json();
+        const data = await response.json();
+        console.log("API Data Received:", data); // Debug log
         setWeatherData(data);
-        setLoading(false);
+
       } catch (err) {
+        // Enhanced error logging (LINE ~53)
+        console.error("Full Error Details:", {
+          error: err,
+          message: err instanceof Error ? err.message : 'Unknown error',
+          time: new Date().toISOString()
+        });
         setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      } finally {
         setLoading(false);
       }
     };
@@ -98,34 +113,45 @@ const WeatherRecommendation = () => {
       accessories: []
     };
 
-    // Temperature-based recommendations
+    // Temperature logic
     if (temp < 10) {
-      recommendations.top.push('Hoodie', 'Thermal layer');
-      recommendations.bottom.push('Joggers', 'Waterproof trousers');
-      recommendations.accessories.push('Gloves', 'Beanie');
+      recommendations.top.push('Hoodie', 'Windbreaker');
+      recommendations.bottom.push('Joggers', 'Waterproof Trousers');
     } else if (temp < 15) {
-      recommendations.top.push('Long-sleeve shirt', 'Light jacket');
-      recommendations.bottom.push('Hiking pants');
+      recommendations.top.push('Windbreaker');
+      recommendations.bottom.push('Joggers');
     } else {
-      recommendations.top.push('T-shirt', 'Light windbreaker');
-      recommendations.bottom.push('Shorts', 'Convertible pants');
+      recommendations.top.push('Windbreaker');
+      recommendations.bottom.push('Joggers');
     }
 
-    // Precipitation-based recommendations
+    // Precipitation logic
     if (precipitation > 30) {
-      recommendations.top.push('Waterproof jacket');
-      recommendations.bottom.push('Waterproof trousers');
-      recommendations.accessories.push('Waterproof cover for backpack');
+      recommendations.top.push('Waterproof Trousers');
+      recommendations.accessories.push('Waterproof Trousers');
     }
 
-    // Wind-based recommendations
+    // Wind logic
     if (windSpeed > 15) {
       recommendations.top.push('Windbreaker');
-      recommendations.accessories.push('Buff or neck gaiter');
     }
 
     return recommendations;
   };
+
+  const renderClothingItem = (item: string) => (
+    <div key={item} className="clothing-item">
+      <img
+        src={clothingImages[item]}
+        alt={item}
+        className="clothing-image"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = 'none';
+        }}
+      />
+      <span className="clothing-label">{item}</span>
+    </div>
+  );
 
   if (loading) return <div className="loading">Loading weather data...</div>;
   if (error) return <div className="error">Error: {error}</div>;
@@ -157,21 +183,18 @@ const WeatherRecommendation = () => {
       </div>
 
       <div className="weather-summary">
-        {currentWeather.weather[0].description.charAt(0).toUpperCase() +
-         currentWeather.weather[0].description.slice(1)} with {Math.round(currentWeather.pop * 100)}% chance of precipitation
+        {currentWeather.weather[0].description} with {Math.round(currentWeather.pop * 100)}% precipitation chance
       </div>
 
       <div className="recommendation-text">
-        A {recommendations.top.includes('Hoodie') ? 'hoodie/jacket' : 'light jacket'} with{' '}
-        {recommendations.bottom.includes('Joggers') ? 'joggers/waterproof trousers' : 'hiking pants'} are preferred
+        {recommendations.top.includes('Hoodie')
+          ? 'A hoodie/jacket with joggers/waterproof trousers are preferred'
+          : 'A light jacket with hiking pants are recommended'}
       </div>
 
-      <div className="clothing-items">
-        {[...recommendations.top.slice(0, 2), ...recommendations.bottom.slice(0, 2)].map((item, index) => (
-          <div key={`item-${index}`} className="clothing-item">
-            {item}
-          </div>
-        ))}
+      <div className="clothing-grid">
+        {[...recommendations.top.slice(0, 2), ...recommendations.bottom.slice(0, 2)]
+          .map(renderClothingItem)}
       </div>
 
       <div className="location-search">
