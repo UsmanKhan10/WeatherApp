@@ -6,6 +6,14 @@ import hoodieImg from '../../assets/clothing/hoodie.png';
 import joggersImg from '../../assets/clothing/joggers.png';
 import windbreakerImg from '../../assets/clothing/windbreaker.png';
 import waterproofTrousersImg from '../../assets/clothing/waterprooftrousers.png';
+import capImg from '../../assets/clothing/cap.png';
+import shoesImg from '../../assets/clothing/shoes.png';
+import shortsImg from '../../assets/clothing/shorts.png';
+import summersocksImg from '../../assets/clothing/summersocks.png';
+import thickjacketImg from '../../assets/clothing/thick-jacket.png';
+import thicksocksImg from '../../assets/clothing/thick-socks.png';
+import tshirtImg from '../../assets/clothing/tshirt.png';
+import thicktrousers from '../../assets/clothing/thick trousers.png';
 import RainIcon from '../../assets/icons/Rain.svg';
 import SunIcon from '../../assets/icons/Sun.svg';
 import WindIcon from '../../assets/icons/Wind.svg';
@@ -16,6 +24,14 @@ const clothingImages: Record<string, string> = {
   'Joggers': joggersImg,
   'Windbreaker': windbreakerImg,
   'Waterproof Trousers': waterproofTrousersImg,
+  'Cap': capImg,
+  'Shoes': shoesImg,
+  'Shorts': shortsImg,
+  'Summer Socks': summersocksImg,
+  'Thick Jacket': thickjacketImg,
+  'Thick Socks': thicksocksImg,
+  'Tshirt': tshirtImg,
+  'Thick Trousers': thicktrousers
 };
 
 // TypeScript Interfaces
@@ -53,6 +69,7 @@ interface ClothingRecommendations {
   top: string[];
   bottom: string[];
   accessories: string[];
+  footwear: string[];
 }
 
 
@@ -111,31 +128,63 @@ const WeatherRecommendation = () => {
     const recommendations: ClothingRecommendations = {
       top: [],
       bottom: [],
-      accessories: []
+      accessories: [],
+      footwear: [],
     };
 
     // Temperature conditions
-    if (temp < 10) {
+    if (temp < 0) {
+      recommendations.top.push('Thick Jacket', 'Hoodie');
+      recommendations.bottom.push('Thick Trousers');
+      recommendations.footwear.push('Shoes', 'Thick Socks');
+    }
+    else if (temp < 10) {
       recommendations.top.push('Hoodie', 'Windbreaker');
-      recommendations.bottom.push('Joggers', 'Waterproof Trousers');
-    } else if (temp < 15) {
-      recommendations.top.push('Windbreaker');
       recommendations.bottom.push('Joggers');
-    } else {
-      recommendations.top.push('Windbreaker');
+      recommendations.footwear.push('Shoes')
+    }
+    else if (temp < 15) {
+      recommendations.top.push('Windbreaker', 'Tshirt');
       recommendations.bottom.push('Joggers');
+      recommendations.footwear.push('Shoes');
+
+    }
+    else {
+      recommendations.top.push('Tshirt');
+      recommendations.bottom.push('Shorts');
+      recommendations.accessories.push('Summer Socks', 'Cap');
     }
 
     // Precipitation conditions
     if (precipitation > 30) {
-      recommendations.top.push('Waterproof Trousers');
+      recommendations.top.push('Windbreaker');
       recommendations.accessories.push('Waterproof Trousers');
     }
 
     // Wind conditions
     if (windSpeed > 15) {
       recommendations.top.push('Windbreaker');
+      recommendations.bottom.push('joggers')
     }
+
+    const getRecommendation = () => {
+      const current = hourlyForecast[0]; // Same as currentWeather
+      const temp = current.main.temp;
+      const precipitation = current.pop * 100;
+      const windSpeed = current.wind.speed;
+
+      const topItems = recommendations.top.join(" or ");
+      const bottomItems = recommendations.bottom.join(" or ");
+
+      let reason = "";
+      if (temp < 10) reason = "because it's cold";
+      if (precipitation > 30) reason = "because it will rain";
+      if (windSpeed > 15) reason = "because it's windy";
+
+      return `Wear ${topItems} with ${bottomItems} ${reason}`;
+    };
+
+
 
     return recommendations;
   };
@@ -200,14 +249,48 @@ const WeatherRecommendation = () => {
       </div>
 
       <div className="recommendation-text">
-        {recommendations.top.includes('Hoodie')
-          ? 'A hoodie/jacket with joggers/waterproof trousers are preferred'
-          : 'A light jacket with hiking pants are recommended'}
+        {(() => {
+          const current = hourlyForecast[0];
+          if (!current) return "Loading...";
+
+          const temp = current.main.temp;
+          const precip = current.pop * 100;
+          const wind = current.wind.speed;
+
+          let text = `Wearing a ${recommendations.top.join(" and/or ")} with ${recommendations.bottom.join(" or ")} is recommended`;
+
+          if (temp < 0) text += " due to extremely low temperatures"
+          else if (temp < 10) text += " due to low temperatures";
+          if (precip > 30) text += " due to precipitation";
+          if (wind > 15) text += " due to high wind speeds";
+
+          return text;
+        })()}
       </div>
 
-      <div className="clothing-grid">
-        {[...recommendations.top.slice(0, 2), ...recommendations.bottom.slice(0, 2)]
-          .map(renderClothingItem)}
+      <div className="clothing-sections">
+        {/* Top/Bottom */}
+        <div className="clothing-grid">
+          <h4 className="category-title">Tops & Bottoms</h4>
+          {[...recommendations.top, ...recommendations.bottom]
+            .map(renderClothingItem)}
+        </div>
+
+        {/* Footwear */}
+        {recommendations.footwear.length > 0 && (
+          <div className="clothing-grid">
+            <h4 className="category-title">Footwear</h4>
+            {recommendations.footwear.map(renderClothingItem)}
+          </div>
+        )}
+
+        {/* Accessories */}
+        {recommendations.accessories.length > 0 && (
+          <div className="clothing-grid">
+            <h4 className="category-title">Accessories</h4>
+            {recommendations.accessories.map(renderClothingItem)}
+          </div>
+        )}
       </div>
 
       <div className="location-search">

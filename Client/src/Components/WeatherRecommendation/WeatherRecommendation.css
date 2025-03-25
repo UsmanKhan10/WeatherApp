@@ -116,3 +116,17 @@
   justify-content: center;
   margin: 4px 0;
 }
+
+.clothing-sections {
+  width: 100%;
+}
+
+.category-title {
+  color: #4A5568;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  text-align: center;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 6px;
+}
